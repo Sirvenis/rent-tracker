@@ -2,20 +2,44 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#2d3436">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="description" content="Track your rent payments - see at a glance what's paid and what's not">
 <title>Rent Tracker</title>
+<link rel="manifest" href="manifest.json">
 <style>
   :root {
     --green: #2ecc71;
+    --green-dark: #27ae60;
     --green-light: #d5f5e3;
     --red: #e74c3c;
+    --red-dark: #c0392b;
     --red-light: #fadbd8;
     --bg: #f5f6fa;
     --card: #ffffff;
     --text: #2d3436;
     --text-light: #636e72;
+    --text-lighter: #b2bec3;
     --accent: #3498db;
+    --accent-dark: #2980b9;
+    --orange: #e67e22;
+    --orange-light: #fdebd0;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
     --radius: 12px;
+    --radius-sm: 8px;
+  }
+  [data-theme="dark"] {
+    --bg: #1a1a2e;
+    --card: #16213e;
+    --text: #eaeaea;
+    --text-light: #a0a0b0;
+    --text-lighter: #666677;
+    --green-light: #1a3a2a;
+    --red-light: #3a1a1a;
+    --orange-light: #3a2a1a;
+    --shadow: 0 2px 8px rgba(0,0,0,0.25);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -26,41 +50,111 @@
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding: 20px;
+    padding: 16px;
+    transition: background 0.3s, color 0.3s;
   }
   .container {
     width: 100%;
-    max-width: 420px;
+    max-width: 440px;
+    padding-bottom: 80px;
   }
-  h1 {
-    font-size: 1.5rem;
-    margin-bottom: 4px;
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
   }
-  .subtitle {
-    color: var(--text-light);
-    font-size: 0.85rem;
-    margin-bottom: 16px;
+  .header h1 { font-size: 1.4rem; }
+  .header-right { display: flex; gap: 8px; }
+  .icon-btn {
+    background: var(--card);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow);
+    color: var(--text);
+    transition: transform 0.15s;
   }
-  .status-bar {
+  .icon-btn:active { transform: scale(0.9); }
+
+  /* Summary Card */
+  .summary {
     background: var(--card);
     border-radius: var(--radius);
-    padding: 16px 20px;
-    margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    padding: 20px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+  .summary-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
-  .status-bar .label { font-size: 0.8rem; color: var(--text-light); }
-  .status-bar .value { font-size: 1.1rem; font-weight: 700; }
-  .status-bar .value.paid { color: var(--green); }
-  .status-bar .value.unpaid { color: var(--red); }
+  .summary-left, .summary-right { flex: 1; }
+  .summary-right { text-align: right; }
+  .summary .label { font-size: 0.7rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+  .summary .value { font-size: 1.15rem; font-weight: 700; margin-top: 2px; }
+  .summary .value.paid { color: var(--green); }
+  .summary .value.unpaid { color: var(--red); }
+  .divider { width: 1px; height: 40px; background: var(--text-lighter); margin: 0 16px; opacity: 0.3; }
+
+  /* Balance bar */
+  .balance-bar {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    [data-theme="dark"] & { border-top-color: rgba(255,255,255,0.08); }
+  }
+  .balance-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .balance-label { font-size: 0.75rem; color: var(--text-light); }
+  .balance-amount { font-size: 0.95rem; font-weight: 700; }
+  .balance-amount.ahead { color: var(--green); }
+  .balance-amount.behind { color: var(--red); }
+  .balance-amount.even { color: var(--accent); }
+  .progress-track {
+    height: 8px;
+    background: rgba(0,0,0,0.08);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+  .progress-fill.paid { background: var(--green); }
+  .progress-fill.unpaid { background: var(--red); }
+  .next-due {
+    margin-top: 8px;
+    font-size: 0.7rem;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .next-due.soon { color: var(--orange); font-weight: 600; }
+  .next-due.overdue { color: var(--red); font-weight: 600; }
+
+  /* Calendar */
   .calendar {
     background: var(--card);
     border-radius: var(--radius);
     padding: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
   }
   .cal-header {
     display: flex;
@@ -68,10 +162,10 @@
     align-items: center;
     margin-bottom: 12px;
   }
-  .cal-header h2 { font-size: 1rem; }
+  .cal-header h2 { font-size: 0.95rem; font-weight: 600; }
   .cal-nav {
     background: none;
-    border: 2px solid var(--text-light);
+    border: 2px solid var(--text-lighter);
     border-radius: 50%;
     width: 32px;
     height: 32px;
@@ -83,151 +177,475 @@
     color: var(--text-light);
     padding: 0;
     line-height: 1;
+    transition: border-color 0.2s;
   }
   .cal-nav:hover { border-color: var(--text); color: var(--text); }
-  .cal-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-  }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
   .cal-dow {
     text-align: center;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--text-light);
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-lighter);
     padding: 4px 0;
+    text-transform: uppercase;
   }
   .cal-day {
     aspect-ratio: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
-    font-size: 0.85rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
     cursor: default;
+    position: relative;
     transition: transform 0.1s;
   }
-  .cal-day:hover { transform: scale(1.1); }
+  .cal-day:hover { transform: scale(1.15); z-index: 1; }
   .cal-day.empty { background: none; }
   .cal-day.paid { background: var(--green); color: #fff; font-weight: 600; }
   .cal-day.unpaid { background: var(--red); color: #fff; font-weight: 600; }
-  .cal-day.today { box-shadow: 0 0 0 3px var(--accent); }
-  .cal-day.future { opacity: 0.5; }
-
+  .cal-day.today { box-shadow: 0 0 0 2.5px var(--accent); }
+  .cal-day.future-paid { background: var(--green-light); color: var(--green-dark); }
+  .cal-day.future-unpaid { background: var(--red-light); color: var(--red-dark); }
+  .cal-day.due-marker::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--orange);
+  }
   .legend {
     display: flex;
-    gap: 16px;
+    gap: 12px;
     justify-content: center;
-    margin-top: 12px;
-    font-size: 0.75rem;
+    margin-top: 10px;
+    font-size: 0.7rem;
     color: var(--text-light);
+    flex-wrap: wrap;
   }
-  .legend-item { display: flex; align-items: center; gap: 6px; }
-  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
   .legend-dot.paid { background: var(--green); }
   .legend-dot.unpaid { background: var(--red); }
+  .legend-dot.due { background: var(--orange); border-radius: 50%; }
 
+  /* Year toggle */
+  .year-toggle {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .year-toggle button {
+    background: none;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .year-toggle button.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* Year view */
+  .year-view {
+    display: none;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
+  }
+  .year-view.visible { display: block; }
+  .year-view h2 { font-size: 0.95rem; margin-bottom: 10px; text-align: center; }
+  .year-months {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .year-month {
+    background: rgba(0,0,0,0.03);
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 0.65rem;
+  }
+  .year-month-name {
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 4px;
+    font-size: 0.7rem;
+  }
+  .year-month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+  }
+  .year-month-day {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    min-width: 0;
+  }
+  .year-month-day.paid { background: var(--green); }
+  .year-month-day.unpaid { background: var(--red); }
+  .year-month-day.current-month { opacity: 1; }
+  .year-month-day.other-month { opacity: 0.15; background: var(--text-lighter); }
+
+  /* Payment Section */
   .pay-section {
     background: var(--card);
     border-radius: var(--radius);
     padding: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
   }
-  .pay-section h2 { font-size: 1rem; margin-bottom: 12px; }
-  .pay-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-  .pay-row input {
+  .pay-section h2 { font-size: 0.95rem; margin-bottom: 12px; }
+  .pay-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .pay-row input, .pay-row select {
     flex: 1;
     padding: 12px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    font-size: 1rem;
+    border: 2px solid var(--text-lighter);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
     outline: none;
     transition: border-color 0.2s;
+    background: var(--card);
+    color: var(--text);
+    -webkit-appearance: none;
+    appearance: none;
   }
-  .pay-row input:focus { border-color: var(--accent); }
-  .pay-row input::placeholder { color: #bbb; }
+  .pay-row select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23636e72' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+  .pay-row input:focus, .pay-row select:focus { border-color: var(--accent); }
+  .pay-row input::placeholder { color: var(--text-lighter); }
   .pay-btn {
     width: 100%;
     padding: 14px;
     background: var(--green);
     color: #fff;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.2s, transform 0.1s;
   }
-  .pay-btn:hover { background: #27ae60; }
+  .pay-btn:hover { background: var(--green-dark); }
   .pay-btn:active { transform: scale(0.98); }
-
-  .info-text {
-    font-size: 0.75rem;
-    color: var(--text-light);
-    margin-top: 10px;
-    text-align: center;
+  .quick-fill {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
   }
+  .quick-fill button {
+    flex: 1;
+    padding: 8px 4px;
+    background: rgba(0,0,0,0.04);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 6px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    color: var(--text-light);
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .quick-fill button:active { background: rgba(0,0,0,0.1); }
 
+  /* Settings Panel (slide-over) */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    justify-content: center;
+    align-items: flex-end;
+  }
+  .overlay.visible { display: flex; }
+  .settings-panel {
+    background: var(--card);
+    border-radius: 20px 20px 0 0;
+    padding: 24px;
+    width: 100%;
+    max-width: 440px;
+    max-height: 85vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .settings-panel h2 {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: var(--text-light);
+    padding: 4px;
+  }
+  .setting-group {
+    margin-bottom: 18px;
+  }
+  .setting-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .setting-group input, .setting-group select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--text-lighter);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    outline: none;
+    background: var(--card);
+    color: var(--text);
+    transition: border-color 0.2s;
+  }
+  .setting-group input:focus, .setting-group select:focus { border-color: var(--accent); }
+  .setting-row {
+    display: flex;
+    gap: 10px;
+  }
+  .setting-row .setting-group { flex: 1; }
+  .save-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s;
+  }
+  .save-btn:hover { background: var(--accent-dark); }
+
+  /* History */
   .history {
     background: var(--card);
     border-radius: var(--radius);
     padding: 16px 20px;
-    margin-top: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+    display: none;
   }
+  .history.visible { display: block; }
   .history h2 { font-size: 0.9rem; margin-bottom: 10px; }
   .history-item {
     display: flex;
     justify-content: space-between;
     padding: 8px 0;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
     font-size: 0.8rem;
+    align-items: center;
   }
   .history-item:last-child { border-bottom: none; }
-  .history-date { color: var(--text-light); }
-  .history-amount { font-weight: 600; color: var(--green); }
-
+  .history-date { color: var(--text-light); font-size: 0.75rem; }
+  .history-amount { font-weight: 700; }
+  .history-amount.paid-val { color: var(--green); }
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--red);
+    cursor: pointer;
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+  }
+  .del-btn:hover { opacity: 1; }
   .clear-btn {
     background: none;
     border: 2px solid var(--red);
     color: var(--red);
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-size: 0.8rem;
     cursor: pointer;
-    margin-top: 12px;
+    margin-top: 10px;
     width: 100%;
     transition: background 0.2s;
   }
   .clear-btn:hover { background: var(--red-light); }
 
+  /* Monthly expected */
+  .monthly-summary {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+  .monthly-summary h2 { font-size: 0.85rem; margin-bottom: 10px; color: var(--text-light); }
+  .monthly-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    padding: 4px 0;
+  }
+  .monthly-row.total {
+    border-top: 2px solid rgba(0,0,0,0.08);
+    margin-top: 6px;
+    padding-top: 8px;
+    font-weight: 700;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    z-index: 200;
+    transition: transform 0.3s ease, opacity 0.3s;
+    opacity: 0;
+    white-space: nowrap;
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  /* Install banner */
+  .install-banner {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--accent);
+    color: #fff;
+    padding: 12px 20px;
+    font-size: 0.8rem;
+    z-index: 50;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  }
+  .install-banner.visible { display: flex; }
+  .install-banner button {
+    background: #fff;
+    color: var(--accent);
+    border: none;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  .install-banner .dismiss {
+    background: none;
+    color: #fff;
+    font-size: 1.2rem;
+    padding: 4px 8px;
+  }
+
   @media (max-width: 360px) {
-    .cal-day { font-size: 0.75rem; }
+    .cal-day { font-size: 0.7rem; }
     .pay-row { flex-direction: column; }
+    .setting-row { flex-direction: column; gap: 0; }
   }
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>Rent Tracker</h1>
-  <p class="subtitle">Track your rent payments at a glance</p>
 
-  <div class="status-bar">
-    <div>
-      <div class="label">Paid up to</div>
-      <div class="value" id="paidUpTo">—</div>
-    </div>
-    <div style="text-align:right">
-      <div class="label">Days remaining</div>
-      <div class="value" id="daysRemaining">—</div>
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <h1>&#127968; Rent Tracker</h1>
+    <div class="header-right">
+      <button class="icon-btn" id="darkToggle" title="Toggle dark mode">&#9728;</button>
+      <button class="icon-btn" id="settingsBtn" title="Settings">&#9881;</button>
     </div>
   </div>
 
-  <div class="calendar">
+  <!-- Summary -->
+  <div class="summary">
+    <div class="summary-row">
+      <div class="summary-left">
+        <div class="label">Paid up to</div>
+        <div class="value" id="paidUpTo">&#8212;</div>
+      </div>
+      <div class="divider"></div>
+      <div class="summary-right">
+        <div class="label">Days remaining</div>
+        <div class="value" id="daysRemaining">&#8212;</div>
+      </div>
+    </div>
+    <div class="balance-bar">
+      <div class="balance-info">
+        <span class="balance-label">Balance</span>
+        <span class="balance-amount" id="balanceAmount">$0.00</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width:50%"></div>
+      </div>
+      <div class="next-due" id="nextDue"></div>
+    </div>
+  </div>
+
+  <!-- Monthly Expected -->
+  <div class="monthly-summary" id="monthlySummary" style="display:none">
+    <h2 id="monthlySummaryTitle">This Month</h2>
+    <div class="monthly-row">
+      <span>Expected</span>
+      <span id="monthlyExpected">$0.00</span>
+    </div>
+    <div class="monthly-row">
+      <span>Paid</span>
+      <span id="monthlyPaid">$0.00</span>
+    </div>
+    <div class="monthly-row total">
+      <span>Remaining</span>
+      <span id="monthlyRemaining">$0.00</span>
+    </div>
+  </div>
+
+  <!-- Year Toggle -->
+  <div class="year-toggle">
+    <button id="yearToggleBtn">View Whole Year</button>
+  </div>
+
+  <!-- Year View -->
+  <div class="year-view" id="yearView">
+    <h2 id="yearViewTitle"></h2>
+    <div class="year-months" id="yearMonths"></div>
+  </div>
+
+  <!-- Calendar -->
+  <div class="calendar" id="monthView">
     <div class="cal-header">
       <button class="cal-nav" id="prevMonth">&#8249;</button>
       <h2 id="calTitle"></h2>
@@ -237,46 +655,138 @@
     <div class="legend">
       <div class="legend-item"><div class="legend-dot paid"></div> Paid</div>
       <div class="legend-item"><div class="legend-dot unpaid"></div> Unpaid</div>
+      <div class="legend-item"><div class="legend-dot due"></div> Due date</div>
     </div>
   </div>
 
+  <!-- Pay Section -->
   <div class="pay-section">
-    <h2>Record a Payment</h2>
+    <h2>&#128176; Record Payment</h2>
+    <div class="quick-fill" id="quickFill"></div>
     <div class="pay-row">
-      <input type="number" id="payAmount" placeholder="Amount (e.g. 500)" min="0" step="0.01">
-      <input type="number" id="payWeeks" placeholder="Weeks covered" min="1" value="4">
+      <input type="number" id="payAmount" placeholder="Amount paid" min="0" step="0.01">
+      <input type="date" id="payDate">
     </div>
-    <button class="pay-btn" id="payBtn">Pay Rent</button>
-    <p class="info-text">Enter amount and how many weeks it covers. The calendar updates automatically.</p>
+    <button class="pay-btn" id="payBtn">Record Payment</button>
   </div>
 
-  <div class="history" id="historySection" style="display:none">
-    <h2>Payment History</h2>
+  <!-- History -->
+  <div class="history" id="historySection">
+    <h2>&#128203; Payment History</h2>
     <div id="historyList"></div>
     <button class="clear-btn" id="clearBtn">Clear All Data</button>
   </div>
 </div>
 
+<!-- Settings Overlay -->
+<div class="overlay" id="settingsOverlay">
+  <div class="settings-panel">
+    <h2>
+      Rent Settings
+      <button class="close-btn" id="closeSettings">&#10005;</button>
+    </h2>
+    <div class="setting-group">
+      <label>Rent Amount</label>
+      <input type="number" id="setAmount" placeholder="e.g. 500" min="0" step="0.01">
+    </div>
+    <div class="setting-row">
+      <div class="setting-group">
+        <label>Frequency</label>
+        <select id="setFrequency">
+          <option value="weekly">Weekly</option>
+          <option value="fortnightly">Fortnightly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </div>
+      <div class="setting-group" id="weekdayGroup">
+        <label>Due Day</label>
+        <select id="setWeekday">
+          <option value="0">Sunday</option>
+          <option value="1">Monday</option>
+          <option value="2">Tuesday</option>
+          <option value="3">Wednesday</option>
+          <option value="4">Thursday</option>
+          <option value="5">Friday</option>
+          <option value="6">Saturday</option>
+        </select>
+      </div>
+    </div>
+    <div class="setting-group" id="monthlyGroup" style="display:none">
+      <label>Day of Month Due</label>
+      <select id="setMonthday">
+        <!-- Filled by JS -->
+      </select>
+    </div>
+    <div class="setting-group">
+      <label>First Due Date</label>
+      <input type="date" id="setFirstDue">
+    </div>
+    <button class="save-btn" id="saveSettings">Save Settings</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Install Banner -->
+<div class="install-banner" id="installBanner">
+  <span>Install Rent Tracker on your phone</span>
+  <div>
+    <button class="dismiss" id="dismissInstall">&#10005;</button>
+    <button id="installBtn">Install</button>
+  </div>
+</div>
+
 <script>
 (function() {
-  const STORAGE_KEY = 'rent_tracker_v1';
+  // === Constants ===
+  const STORAGE_KEY = 'rent_tracker_v2';
+  const THEME_KEY = 'rent_tracker_theme';
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  // === State ===
   let currentDate = new Date();
   let data = loadData();
+  let deferredPrompt = null;
+
+  function defaultData() {
+    return {
+      settings: {
+        amount: 0,
+        frequency: 'monthly',  // weekly, fortnightly, monthly
+        weekday: 1,            // 0=Sun, 1=Mon, etc (for weekly/fortnightly)
+        monthday: 1,           // 1-31 (for monthly)
+        firstDue: formatDate(new Date()),
+      },
+      payments: []
+    };
+  }
 
   function loadData() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const d = JSON.parse(raw);
+        // Ensure settings exist
+        if (!d.settings) d.settings = defaultData().settings;
+        return d;
+      }
     } catch(e) {}
-    return { payments: [], paidUpTo: null };
+    return defaultData();
   }
 
   function saveData() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }
 
+  // === Date helpers ===
   function formatDate(d) {
-    return d.toISOString().split('T')[0];
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
   }
 
   function parseDate(s) {
@@ -284,56 +794,152 @@
     return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
   }
 
+  function dayOfYear(d) {
+    const start = new Date(d.getFullYear(), 0, 0);
+    return Math.floor((d - start) / (1000 * 60 * 60 * 24));
+  }
+
+  function daysBetween(a, b) {
+    const da = parseDate(a);
+    const db = parseDate(b);
+    return Math.round((db - da) / (1000 * 60 * 60 * 24));
+  }
+
+  function addDays(dateStr, n) {
+    const d = parseDate(dateStr);
+    d.setDate(d.getDate() + n);
+    return formatDate(d);
+  }
+
+  function clampDate(dateStr, minStr, maxStr) {
+    if (dateStr < minStr) return minStr;
+    if (dateStr > maxStr) return maxStr;
+    return dateStr;
+  }
+
+  // === Core logic: calculate coverage from payments ===
+  function recalculate() {
+    const today = formatDate(new Date());
+    const s = data.settings;
+    if (!s.amount || s.amount <= 0) {
+      data.paidUpTo = null;
+      return;
+    }
+
+    // Generate expected due dates from firstDue onwards
+    const dueDates = getDueDatesUntil(addDays(today, 365));
+
+    // Calculate how many periods each payment covers
+    let periodsCovered = data.payments.map(p => {
+      return Math.floor(p.amount / s.amount);
+    });
+
+    // Assign coverage from oldest payment to newest
+    let coverageEnd = null;
+    let cumulativePeriods = 0;
+
+    const sortedPayments = [...data.payments].sort((a, b) => a.date.localeCompare(b.date));
+
+    for (let i = 0; i < sortedPayments.length; i++) {
+      const p = sortedPayments[i];
+      const periods = Math.floor(p.amount / s.amount);
+      if (periods <= 0) continue;
+
+      // Find which period this payment starts covering from
+      // Count how many periods were covered before this payment
+      let startIdx = 0;
+      for (let j = 0; j < i; j++) {
+        startIdx += Math.floor(sortedPayments[j].amount / s.amount);
+      }
+
+      const endIdx = startIdx + periods - 1;
+      if (endIdx < dueDates.length) {
+        const thisEnd = dueDates[endIdx];
+        // Extend coverage if contiguous
+        if (!coverageEnd || startIdx <= cumulativePeriods) {
+          coverageEnd = thisEnd;
+          cumulativePeriods = endIdx;
+        }
+      }
+    }
+
+    data.paidUpTo = coverageEnd;
+    return dueDates;
+  }
+
+  function getDueDatesUntil(untilStr) {
+    const s = data.settings;
+    const dates = [];
+    let d = parseDate(s.firstDue);
+
+    while (formatDate(d) <= untilStr) {
+      dates.push(formatDate(d));
+      if (s.frequency === 'weekly') {
+        d.setDate(d.getDate() + 7);
+      } else if (s.frequency === 'fortnightly') {
+        d.setDate(d.getDate() + 14);
+      } else {
+        // Monthly: advance to same day next month
+        d.setMonth(d.getMonth() + 1);
+        // Handle month-end (e.g. Jan 31 -> Feb 28)
+        const targetDay = parseInt(s.monthday) || s.firstDue.split('-')[2];
+        const maxDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+        d.setDate(Math.min(parseInt(targetDay), maxDay));
+      }
+
+      // Safety: break if we've gone too far
+      if (dates.length > 1000) break;
+    }
+
+    // For weekly/fortnightly with a specific weekday, adjust
+    if (s.frequency === 'weekly' || s.frequency === 'fortnightly') {
+      return dates.map(ds => {
+        const dt = parseDate(ds);
+        const targetDow = parseInt(s.weekday);
+        const currentDow = dt.getDay();
+        const diff = (targetDow - currentDow + 7) % 7;
+        dt.setDate(dt.getDate() + diff);
+        return formatDate(dt);
+      }).filter(ds => ds <= untilStr).sort();
+    }
+
+    return dates;
+  }
+
+  function getNextDueDate() {
+    const today = formatDate(new Date());
+    const dates = getDueDatesUntil(addDays(today, 365));
+    return dates.find(d => d >= today) || dates[dates.length - 1] || null;
+  }
+
+  function isDueDate(dateStr) {
+    const dates = getDueDatesUntil(addDays(dateStr, 1));
+    return dates.includes(dateStr);
+  }
+
   function isPaid(dateStr) {
     if (!data.paidUpTo) return false;
     return dateStr <= data.paidUpTo;
   }
 
-  function recalculatePaidUpTo() {
-    if (!data.payments.length) {
-      data.paidUpTo = null;
-      return;
-    }
-    // Each payment has a date and weeks covered
-    // Build coverage intervals and find the latest contiguous coverage from the earliest payment
-    let intervals = data.payments.map(p => {
-      const start = parseDate(p.date);
-      const end = new Date(start);
-      end.setDate(end.getDate() + (p.weeks * 7) - 1);
-      return { start: formatDate(start), end: formatDate(end) };
-    });
-    intervals.sort((a, b) => a.start.localeCompare(b.start));
-
-    // Merge overlapping intervals
-    let merged = [intervals[0]];
-    for (let i = 1; i < intervals.length; i++) {
-      const last = merged[merged.length - 1];
-      if (intervals[i].start <= last.end || datesAdjacent(last.end, intervals[i].start)) {
-        if (intervals[i].end > last.end) last.end = intervals[i].end;
-      } else {
-        merged.push(intervals[i]);
-      }
-    }
-
-    // Find the latest contiguous block that covers today or the most recent
+  function getBalance() {
     const today = formatDate(new Date());
-    // Find the interval that covers today, or the latest one
-    let latestEnd = merged[0].end;
-    for (let i = 1; i < merged.length; i++) {
-      if (merged[i].start <= latestEnd || datesAdjacent(latestEnd, merged[i].start)) {
-        if (merged[i].end > latestEnd) latestEnd = merged[i].end;
-      }
-    }
-    data.paidUpTo = latestEnd;
+    const s = data.settings;
+    if (!s.amount || s.amount <= 0) return { status: 'none', amount: 0, expected: 0, paid: 0 };
+
+    // How many due dates have passed (including today)?
+    const dueDates = getDueDatesUntil(today);
+    const passed = dueDates.filter(d => d <= today);
+    const expected = passed.length * s.amount;
+    const paid = data.payments.reduce((sum, p) => sum + p.amount, 0);
+    const diff = paid - expected;
+
+    if (diff > 0) return { status: 'ahead', amount: diff, expected, paid };
+    if (diff < 0) return { status: 'behind', amount: Math.abs(diff), expected, paid };
+    return { status: 'even', amount: 0, expected, paid };
   }
 
-  function datesAdjacent(d1, d2) {
-    const a = parseDate(d1);
-    const b = parseDate(d2);
-    const diff = (b - a) / (1000 * 60 * 60 * 24);
-    return diff <= 1;
-  }
-
+  // === Render ===
   function renderCalendar() {
     const grid = document.getElementById('calGrid');
     const title = document.getElementById('calTitle');
@@ -341,13 +947,9 @@
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
+    title.textContent = MONTHS[month] + ' ' + year;
 
-    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
-
-    title.textContent = months[month] + ' ' + year;
-
-    days.forEach(d => {
+    DAYS.forEach(d => {
       const el = document.createElement('div');
       el.className = 'cal-dow';
       el.textContent = d;
@@ -356,65 +958,194 @@
 
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const today = new Date();
-    const todayStr = formatDate(today);
+    const today = formatDate(new Date());
 
-    // Empty cells before first day
     for (let i = 0; i < firstDay; i++) {
-      const el = document.createElement('div');
-      el.className = 'cal-day empty';
-      grid.appendChild(el);
+      grid.appendChild(Object.assign(document.createElement('div'), { className: 'cal-day empty' }));
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
+      const ds = year + '-' + String(month + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
       const el = document.createElement('div');
-      const ds = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
       el.textContent = d;
 
-      const isToday = ds === todayStr;
-      const isFuture = ds > todayStr;
+      const isToday = ds === today;
+      const isFuture = ds > today;
+      const isDue = isDueDate(ds);
 
       if (isPaid(ds)) {
         el.className = 'cal-day paid' + (isToday ? ' today' : '');
+        if (isDue && !isToday) el.className += ' due-marker';
+      } else if (isFuture) {
+        el.className = 'cal-day future-unpaid' + (isToday ? ' today' : '');
       } else {
-        el.className = 'cal-day unpaid' + (isToday ? ' today' : '') + (isFuture ? ' future' : '');
+        el.className = 'cal-day unpaid' + (isToday ? ' today' : '');
+        if (isDue && !isToday) el.className += ' due-marker';
       }
 
       grid.appendChild(el);
     }
 
     updateStatus();
+    renderMonthlySummary();
+  }
+
+  function renderYearView() {
+    const container = document.getElementById('yearMonths');
+    const title = document.getElementById('yearViewTitle');
+    const year = currentDate.getFullYear();
+    title.textContent = year;
+    container.innerHTML = '';
+
+    const today = formatDate(new Date());
+
+    for (let m = 0; m < 12; m++) {
+      const monthDiv = document.createElement('div');
+      monthDiv.className = 'year-month';
+
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'year-month-name';
+      nameDiv.textContent = MONTHS[m].slice(0, 3);
+      if (m === currentDate.getMonth()) nameDiv.style.color = varCSS('--accent');
+      monthDiv.appendChild(nameDiv);
+
+      const gridDiv = document.createElement('div');
+      gridDiv.className = 'year-month-grid';
+
+      const firstDow = new Date(year, m, 1).getDay();
+      const dim = new Date(year, m + 1, 0).getDate();
+
+      // Empty cells
+      for (let i = 0; i < firstDow; i++) {
+        const el = document.createElement('div');
+        el.className = 'year-month-day';
+        gridDiv.appendChild(el);
+      }
+
+      for (let d = 1; d <= dim; d++) {
+        const ds = year + '-' + String(m + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        const el = document.createElement('div');
+        el.className = 'year-month-day';
+        if (isPaid(ds)) {
+          el.classList.add('paid');
+        } else if (ds <= today) {
+          el.classList.add('unpaid');
+        }
+        gridDiv.appendChild(el);
+      }
+
+      monthDiv.appendChild(gridDiv);
+      container.appendChild(monthDiv);
+    }
+  }
+
+  function varCSS(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
 
   function updateStatus() {
     const paidUpEl = document.getElementById('paidUpTo');
     const daysRemEl = document.getElementById('daysRemaining');
+    const balanceEl = document.getElementById('balanceAmount');
+    const progressEl = document.getElementById('progressFill');
+    const nextDueEl = document.getElementById('nextDue');
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Paid up to
     if (!data.paidUpTo) {
       paidUpEl.textContent = 'Not paid';
       paidUpEl.className = 'value unpaid';
-      daysRemEl.textContent = '—';
+      daysRemEl.textContent = 'Set rent in settings &#9881;';
       daysRemEl.className = 'value';
-      return;
-    }
-
-    const paidDate = parseDate(data.paidUpTo);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const diffMs = paidDate - today;
-    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-
-    const opts = { day: 'numeric', month: 'short', year: 'numeric' };
-    paidUpEl.textContent = paidDate.toLocaleDateString('en-AU', opts);
-    paidUpEl.className = 'value paid';
-
-    if (diffDays >= 0) {
-      daysRemEl.textContent = diffDays + ' day' + (diffDays !== 1 ? 's' : '');
-      daysRemEl.className = 'value paid';
     } else {
-      daysRemEl.textContent = Math.abs(diffDays) + ' day' + (Math.abs(diffDays) !== 1 ? 's' : '') + ' overdue';
-      daysRemEl.className = 'value unpaid';
+      const paidDate = parseDate(data.paidUpTo);
+      const diffDays = Math.round((paidDate - today) / (1000 * 60 * 60 * 24));
+      const opts = { day: 'numeric', month: 'short', year: 'numeric' };
+      paidUpEl.textContent = paidDate.toLocaleDateString('en-AU', opts);
+      paidUpEl.className = 'value paid';
+
+      if (diffDays >= 0) {
+        daysRemEl.textContent = diffDays + ' day' + (diffDays !== 1 ? 's' : '');
+        daysRemEl.className = 'value paid';
+      } else {
+        daysRemEl.textContent = Math.abs(diffDays) + ' day' + (Math.abs(diffDays) !== 1 ? 's' : '') + ' overdue';
+        daysRemEl.className = 'value unpaid';
+      }
     }
+
+    // Balance
+    const bal = getBalance();
+    if (bal.status === 'none') {
+      balanceEl.textContent = '—';
+      balanceEl.className = 'balance-amount';
+      progressEl.style.width = '50%';
+      progressEl.className = 'progress-fill';
+    } else if (bal.status === 'ahead') {
+      balanceEl.textContent = '$' + bal.amount.toFixed(2) + ' ahead';
+      balanceEl.className = 'balance-amount ahead';
+      progressEl.style.width = '100%';
+      progressEl.className = 'progress-fill paid';
+    } else if (bal.status === 'behind') {
+      balanceEl.textContent = '$' + bal.amount.toFixed(2) + ' behind';
+      balanceEl.className = 'balance-amount behind';
+      const pct = bal.expected > 0 ? (bal.paid / bal.expected) * 100 : 0;
+      progressEl.style.width = pct + '%';
+      progressEl.className = 'progress-fill unpaid';
+    } else {
+      balanceEl.textContent = 'Even';
+      balanceEl.className = 'balance-amount even';
+      progressEl.style.width = '100%';
+      progressEl.className = 'progress-fill paid';
+    }
+
+    // Next due date
+    const nextDue = getNextDueDate();
+    if (nextDue) {
+      const nd = parseDate(nextDue);
+      const diff = Math.round((nd - today) / (1000 * 60 * 60 * 24));
+      const rel = diff === 0 ? 'today' : diff === 1 ? 'tomorrow' : diff < 0 ? Math.abs(diff) + ' days ago' : diff + ' days';
+      const freqLabel = data.settings.frequency === 'weekly' ? '/week' : data.settings.frequency === 'fortnightly' ? '/fortnight' : '/month';
+      nextDueEl.innerHTML = 'Next due: <strong>' + nd.toLocaleDateString('en-AU', {day:'numeric',month:'short'}) + '</strong> (' + rel +') &middot; $' + data.settings.amount.toFixed(2) + freqLabel;
+      nextDueEl.className = 'next-due' + (diff <= 3 ? diff < 0 ? ' overdue' : ' soon' : '');
+    } else {
+      nextDueEl.textContent = '';
+    }
+  }
+
+  function renderMonthlySummary() {
+    const section = document.getElementById('monthlySummary');
+    const title = document.getElementById('monthlySummaryTitle');
+    const s = data.settings;
+    if (!s.amount || s.amount <= 0) { section.style.display = 'none'; return; }
+
+    section.style.display = 'block';
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    title.textContent = MONTHS[month] + ' ' + year;
+
+    // Count due dates in this month
+    const dueDates = getDueDatesUntil(addDays(formatDate(new Date(year, month + 1, 0)), 1));
+    const thisMonthDue = dueDates.filter(d => {
+      const dd = parseDate(d);
+      return dd.getFullYear() === year && dd.getMonth() === month;
+    });
+    const expected = thisMonthDue.length * s.amount;
+
+    // Payments in this month
+    const paid = data.payments.filter(p => {
+      const pd = parseDate(p.date);
+      return pd.getFullYear() === year && pd.getMonth() === month;
+    }).reduce((sum, p) => sum + p.amount, 0);
+
+    const remaining = expected - paid;
+
+    document.getElementById('monthlyExpected').textContent = '$' + expected.toFixed(2);
+    document.getElementById('monthlyPaid').textContent = '$' + paid.toFixed(2);
+    const remEl = document.getElementById('monthlyRemaining');
+    remEl.textContent = (remaining > 0 ? '$' + remaining.toFixed(2) + ' owing' : remaining < 0 ? '$' + Math.abs(remaining).toFixed(2) + ' credit' : 'All paid!');
+    remEl.style.color = remaining > 0 ? 'var(--red)' : 'var(--green)';
   }
 
   function renderHistory() {
@@ -422,77 +1153,264 @@
     const list = document.getElementById('historyList');
 
     if (!data.payments.length) {
-      section.style.display = 'none';
+      section.classList.remove('visible');
       return;
     }
 
-    section.style.display = 'block';
+    section.classList.add('visible');
     list.innerHTML = '';
 
     const sorted = [...data.payments].sort((a, b) => b.date.localeCompare(a.date));
-    sorted.forEach(p => {
+    sorted.forEach((p, idx) => {
       const el = document.createElement('div');
       el.className = 'history-item';
       const d = parseDate(p.date);
       const dateStr = d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-      el.innerHTML = '<span class="history-date">' + dateStr + ' (' + p.weeks + 'w)</span><span class="history-amount">$' + parseFloat(p.amount).toFixed(2) + '</span>';
+      const realIdx = data.payments.indexOf(p);
+      el.innerHTML = '<span class="history-date">' + dateStr + '</span>' +
+        '<span class="history-amount paid-val">$' + parseFloat(p.amount).toFixed(2) + '</span>' +
+        '<button class="del-btn" data-idx="' + realIdx + '">&#10005;</button>';
       list.appendChild(el);
+    });
+
+    // Delete handlers
+    list.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx);
+        if (confirm('Delete this payment?')) {
+          data.payments.splice(idx, 1);
+          recalculate();
+          saveData();
+          renderAll();
+        }
+      });
     });
   }
 
-  // Event listeners
+  function renderQuickFill() {
+    const container = document.getElementById('quickFill');
+    const s = data.settings;
+    container.innerHTML = '';
+
+    const amounts = [];
+    if (s.amount > 0) {
+      amounts.push({ label: labelFor(s.amount), amt: s.amount });
+      if (s.frequency === 'fortnightly') {
+        amounts.push({ label: labelFor(s.amount * 2), amt: s.amount * 2 });
+      }
+    }
+    amounts.push({ label: '$100', amt: 100 });
+    amounts.push({ label: '$250', amt: 250 });
+    amounts.push({ label: '$500', amt: 500 });
+
+    amounts.forEach(a => {
+      const btn = document.createElement('button');
+      btn.textContent = a.label;
+      btn.addEventListener('click', () => {
+        document.getElementById('payAmount').value = a.amt;
+      });
+      container.appendChild(btn);
+    });
+  }
+
+  function labelFor(amt) {
+    if (amt >= 1000) return '$' + (amt / 1000).toFixed(0) + 'K';
+    return '$' + amt.toFixed(0);
+  }
+
+  function renderSettings() {
+    const s = data.settings;
+    document.getElementById('setAmount').value = s.amount || '';
+    document.getElementById('setFrequency').value = s.frequency;
+    document.getElementById('setWeekday').value = s.weekday;
+    document.getElementById('setMonthday').value = s.monthday || 1;
+    document.getElementById('setFirstDue').value = s.firstDue || formatDate(new Date());
+    toggleFrequencyUI();
+  }
+
+  function toggleFrequencyUI() {
+    const freq = document.getElementById('setFrequency').value;
+    document.getElementById('weekdayGroup').style.display = (freq === 'monthly') ? 'none' : 'block';
+    document.getElementById('monthlyGroup').style.display = (freq === 'monthly') ? 'block' : 'none';
+  }
+
+  function renderAll() {
+    recalculate();
+    renderCalendar();
+    renderYearView();
+    renderHistory();
+    renderQuickFill();
+  }
+
+  // === Settings monthday options ===
+  (function() {
+    const sel = document.getElementById('setMonthday');
+    for (let i = 1; i <= 31; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = i + (i === 1 ? 'st' : i === 2 ? 'nd' : i === 3 ? 'rd' : 'th');
+      sel.appendChild(opt);
+    }
+  })();
+
+  // === Event Listeners ===
+
+  // Navigation
   document.getElementById('prevMonth').addEventListener('click', () => {
     currentDate.setDate(1);
     currentDate.setMonth(currentDate.getMonth() - 1);
     renderCalendar();
   });
-
   document.getElementById('nextMonth').addEventListener('click', () => {
     currentDate.setDate(1);
     currentDate.setMonth(currentDate.getMonth() + 1);
     renderCalendar();
   });
 
+  // Year toggle
+  document.getElementById('yearToggleBtn').addEventListener('click', function() {
+    const yv = document.getElementById('yearView');
+    const mv = document.getElementById('monthView');
+    const isVis = yv.classList.contains('visible');
+    if (isVis) {
+      yv.classList.remove('visible');
+      mv.style.display = '';
+      this.textContent = 'View Whole Year';
+      this.classList.remove('active');
+    } else {
+      yv.classList.add('visible');
+      mv.style.display = 'none';
+      this.textContent = 'View Month';
+      this.classList.add('active');
+    }
+  });
+
+  // Settings
+  document.getElementById('settingsBtn').addEventListener('click', () => {
+    renderSettings();
+    document.getElementById('settingsOverlay').classList.add('visible');
+  });
+  document.getElementById('closeSettings').addEventListener('click', () => {
+    document.getElementById('settingsOverlay').classList.remove('visible');
+  });
+  document.getElementById('settingsOverlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('settingsOverlay')) {
+      document.getElementById('settingsOverlay').classList.remove('visible');
+    }
+  });
+  document.getElementById('setFrequency').addEventListener('change', toggleFrequencyUI);
+  document.getElementById('saveSettings').addEventListener('click', () => {
+    const amt = parseFloat(document.getElementById('setAmount').value) || 0;
+    data.settings.amount = amt;
+    data.settings.frequency = document.getElementById('setFrequency').value;
+    data.settings.weekday = parseInt(document.getElementById('setWeekday').value);
+    data.settings.monthday = parseInt(document.getElementById('setMonthday').value);
+    data.settings.firstDue = document.getElementById('setFirstDue').value || formatDate(new Date());
+    recalculate();
+    saveData();
+    renderAll();
+    document.getElementById('settingsOverlay').classList.remove('visible');
+    showToast('Settings saved!');
+  });
+
+  // Payment
+  document.getElementById('payDate').value = formatDate(new Date());
   document.getElementById('payBtn').addEventListener('click', () => {
-    const amount = parseFloat(document.getElementById('payAmount').value);
-    const weeks = parseInt(document.getElementById('payWeeks').value);
+    const amountInput = document.getElementById('payAmount');
+    const dateInput = document.getElementById('payDate');
+    const amount = parseFloat(amountInput.value);
+    const payDate = dateInput.value || formatDate(new Date());
 
     if (!amount || amount <= 0) {
       alert('Please enter a valid amount');
       return;
     }
-    if (!weeks || weeks < 1) {
-      alert('Please enter number of weeks');
-      return;
-    }
 
-    const today = formatDate(new Date());
-    data.payments.push({ date: today, amount: amount, weeks: weeks });
-    recalculatePaidUpTo();
+    data.payments.push({ date: payDate, amount: amount });
+    recalculate();
     saveData();
-    renderCalendar();
-    renderHistory();
-
-    document.getElementById('payAmount').value = '';
+    renderAll();
+    amountInput.value = '';
+    dateInput.value = formatDate(new Date());
+    showToast('Payment of $' + amount.toFixed(2) + ' recorded!');
   });
 
+  document.getElementById('payAmount').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('payBtn').click();
+  });
+
+  // Clear all
   document.getElementById('clearBtn').addEventListener('click', () => {
-    if (confirm('Clear all payment data? This cannot be undone.')) {
-      data = { payments: [], paidUpTo: null };
+    if (confirm('Clear ALL data including settings and payment history?')) {
+      data = defaultData();
       saveData();
-      renderCalendar();
-      renderHistory();
+      renderAll();
+      showToast('All data cleared');
     }
   });
 
-  // Enter key on inputs
-  document.getElementById('payAmount').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('payBtn').click(); });
-  document.getElementById('payWeeks').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('payBtn').click(); });
+  // Dark mode
+  function loadTheme() {
+    const t = localStorage.getItem(THEME_KEY);
+    if (t === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.getElementById('darkToggle').textContent = '\u2600';
+    }
+  }
+  document.getElementById('darkToggle').addEventListener('click', () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      document.documentElement.removeAttribute('data-theme');
+      document.getElementById('darkToggle').textContent = '\u263E';
+      localStorage.setItem(THEME_KEY, 'light');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.getElementById('darkToggle').textContent = '\u2600';
+      localStorage.setItem(THEME_KEY, 'dark');
+    }
+  });
 
-  // Initial render
-  recalculatePaidUpTo();
-  renderCalendar();
-  renderHistory();
+  // Toast
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // === PWA Install ===
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const banner = document.getElementById('installBanner');
+    const isDismissed = localStorage.getItem('installDismissed');
+    if (!isDismissed) banner.classList.add('visible');
+  });
+
+  document.getElementById('installBtn').addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const result = await deferredPrompt.userChoice;
+    if (result.outcome === 'accepted') {
+      showToast('App installed!');
+    }
+    deferredPrompt = null;
+    document.getElementById('installBanner').classList.remove('visible');
+  });
+
+  document.getElementById('dismissInstall').addEventListener('click', () => {
+    document.getElementById('installBanner').classList.remove('visible');
+    localStorage.setItem('installDismissed', 'true');
+  });
+
+  // === Service Worker ===
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  // === Init ===
+  loadTheme();
+  renderAll();
 })();
 </script>
 </body>
