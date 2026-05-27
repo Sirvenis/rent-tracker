@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rent Tracker</title>
+<style>
+  :root {
+    --green: #2ecc71;
+    --green-light: #d5f5e3;
+    --red: #e74c3c;
+    --red-light: #fadbd8;
+    --bg: #f5f6fa;
+    --card: #ffffff;
+    --text: #2d3436;
+    --text-light: #636e72;
+    --accent: #3498db;
+    --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+  }
+  .container {
+    width: 100%;
+    max-width: 420px;
+  }
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    color: var(--text-light);
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+  }
+  .status-bar {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .status-bar .label { font-size: 0.8rem; color: var(--text-light); }
+  .status-bar .value { font-size: 1.1rem; font-weight: 700; }
+  .status-bar .value.paid { color: var(--green); }
+  .status-bar .value.unpaid { color: var(--red); }
+  .calendar {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 16px;
+  }
+  .cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .cal-header h2 { font-size: 1rem; }
+  .cal-nav {
+    background: none;
+    border: 2px solid var(--text-light);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-light);
+    padding: 0;
+    line-height: 1;
+  }
+  .cal-nav:hover { border-color: var(--text); color: var(--text); }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-dow {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-light);
+    padding: 4px 0;
+  }
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: default;
+    transition: transform 0.1s;
+  }
+  .cal-day:hover { transform: scale(1.1); }
+  .cal-day.empty { background: none; }
+  .cal-day.paid { background: var(--green); color: #fff; font-weight: 600; }
+  .cal-day.unpaid { background: var(--red); color: #fff; font-weight: 600; }
+  .cal-day.today { box-shadow: 0 0 0 3px var(--accent); }
+  .cal-day.future { opacity: 0.5; }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 12px;
+    font-size: 0.75rem;
+    color: var(--text-light);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+  .legend-dot.paid { background: var(--green); }
+  .legend-dot.unpaid { background: var(--red); }
+
+  .pay-section {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .pay-section h2 { font-size: 1rem; margin-bottom: 12px; }
+  .pay-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .pay-row input {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .pay-row input:focus { border-color: var(--accent); }
+  .pay-row input::placeholder { color: #bbb; }
+  .pay-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .pay-btn:hover { background: #27ae60; }
+  .pay-btn:active { transform: scale(0.98); }
+
+  .info-text {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  .history {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-top: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .history h2 { font-size: 0.9rem; margin-bottom: 10px; }
+  .history-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.8rem;
+  }
+  .history-item:last-child { border-bottom: none; }
+  .history-date { color: var(--text-light); }
+  .history-amount { font-weight: 600; color: var(--green); }
+
+  .clear-btn {
+    background: none;
+    border: 2px solid var(--red);
+    color: var(--red);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-top: 12px;
+    width: 100%;
+    transition: background 0.2s;
+  }
+  .clear-btn:hover { background: var(--red-light); }
+
+  @media (max-width: 360px) {
+    .cal-day { font-size: 0.75rem; }
+    .pay-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Rent Tracker</h1>
+  <p class="subtitle">Track your rent payments at a glance</p>
+
+  <div class="status-bar">
+    <div>
+      <div class="label">Paid up to</div>
+      <div class="value" id="paidUpTo">—</div>
+    </div>
+    <div style="text-align:right">
+      <div class="label">Days remaining</div>
+      <div class="value" id="daysRemaining">—</div>
+    </div>
+  </div>
+
+  <div class="calendar">
+    <div class="cal-header">
+      <button class="cal-nav" id="prevMonth">&#8249;</button>
+      <h2 id="calTitle"></h2>
+      <button class="cal-nav" id="nextMonth">&#8250;</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot paid"></div> Paid</div>
+      <div class="legend-item"><div class="legend-dot unpaid"></div> Unpaid</div>
+    </div>
+  </div>
+
+  <div class="pay-section">
+    <h2>Record a Payment</h2>
+    <div class="pay-row">
+      <input type="number" id="payAmount" placeholder="Amount (e.g. 500)" min="0" step="0.01">
+      <input type="number" id="payWeeks" placeholder="Weeks covered" min="1" value="4">
+    </div>
+    <button class="pay-btn" id="payBtn">Pay Rent</button>
+    <p class="info-text">Enter amount and how many weeks it covers. The calendar updates automatically.</p>
+  </div>
+
+  <div class="history" id="historySection" style="display:none">
+    <h2>Payment History</h2>
+    <div id="historyList"></div>
+    <button class="clear-btn" id="clearBtn">Clear All Data</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  const STORAGE_KEY = 'rent_tracker_v1';
+  let currentDate = new Date();
+  let data = loadData();
+
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return { payments: [], paidUpTo: null };
+  }
+
+  function saveData() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function formatDate(d) {
+    return d.toISOString().split('T')[0];
+  }
+
+  function parseDate(s) {
+    const p = s.split('-');
+    return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
+  }
+
+  function isPaid(dateStr) {
+    if (!data.paidUpTo) return false;
+    return dateStr <= data.paidUpTo;
+  }
+
+  function recalculatePaidUpTo() {
+    if (!data.payments.length) {
+      data.paidUpTo = null;
+      return;
+    }
+    // Each payment has a date and weeks covered
+    // Build coverage intervals and find the latest contiguous coverage from the earliest payment
+    let intervals = data.payments.map(p => {
+      const start = parseDate(p.date);
+      const end = new Date(start);
+      end.setDate(end.getDate() + (p.weeks * 7) - 1);
+      return { start: formatDate(start), end: formatDate(end) };
+    });
+    intervals.sort((a, b) => a.start.localeCompare(b.start));
+
+    // Merge overlapping intervals
+    let merged = [intervals[0]];
+    for (let i = 1; i < intervals.length; i++) {
+      const last = merged[merged.length - 1];
+      if (intervals[i].start <= last.end || datesAdjacent(last.end, intervals[i].start)) {
+        if (intervals[i].end > last.end) last.end = intervals[i].end;
+      } else {
+        merged.push(intervals[i]);
+      }
+    }
+
+    // Find the latest contiguous block that covers today or the most recent
+    const today = formatDate(new Date());
+    // Find the interval that covers today, or the latest one
+    let latestEnd = merged[0].end;
+    for (let i = 1; i < merged.length; i++) {
+      if (merged[i].start <= latestEnd || datesAdjacent(latestEnd, merged[i].start)) {
+        if (merged[i].end > latestEnd) latestEnd = merged[i].end;
+      }
+    }
+    data.paidUpTo = latestEnd;
+  }
+
+  function datesAdjacent(d1, d2) {
+    const a = parseDate(d1);
+    const b = parseDate(d2);
+    const diff = (b - a) / (1000 * 60 * 60 * 24);
+    return diff <= 1;
+  }
+
+  function renderCalendar() {
+    const grid = document.getElementById('calGrid');
+    const title = document.getElementById('calTitle');
+    grid.innerHTML = '';
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+    title.textContent = months[month] + ' ' + year;
+
+    days.forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'cal-dow';
+      el.textContent = d;
+      grid.appendChild(el);
+    });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    const todayStr = formatDate(today);
+
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+      const el = document.createElement('div');
+      el.className = 'cal-day empty';
+      grid.appendChild(el);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const el = document.createElement('div');
+      const ds = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+      el.textContent = d;
+
+      const isToday = ds === todayStr;
+      const isFuture = ds > todayStr;
+
+      if (isPaid(ds)) {
+        el.className = 'cal-day paid' + (isToday ? ' today' : '');
+      } else {
+        el.className = 'cal-day unpaid' + (isToday ? ' today' : '') + (isFuture ? ' future' : '');
+      }
+
+      grid.appendChild(el);
+    }
+
+    updateStatus();
+  }
+
+  function updateStatus() {
+    const paidUpEl = document.getElementById('paidUpTo');
+    const daysRemEl = document.getElementById('daysRemaining');
+
+    if (!data.paidUpTo) {
+      paidUpEl.textContent = 'Not paid';
+      paidUpEl.className = 'value unpaid';
+      daysRemEl.textContent = '—';
+      daysRemEl.className = 'value';
+      return;
+    }
+
+    const paidDate = parseDate(data.paidUpTo);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffMs = paidDate - today;
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+    const opts = { day: 'numeric', month: 'short', year: 'numeric' };
+    paidUpEl.textContent = paidDate.toLocaleDateString('en-AU', opts);
+    paidUpEl.className = 'value paid';
+
+    if (diffDays >= 0) {
+      daysRemEl.textContent = diffDays + ' day' + (diffDays !== 1 ? 's' : '');
+      daysRemEl.className = 'value paid';
+    } else {
+      daysRemEl.textContent = Math.abs(diffDays) + ' day' + (Math.abs(diffDays) !== 1 ? 's' : '') + ' overdue';
+      daysRemEl.className = 'value unpaid';
+    }
+  }
+
+  function renderHistory() {
+    const section = document.getElementById('historySection');
+    const list = document.getElementById('historyList');
+
+    if (!data.payments.length) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+    list.innerHTML = '';
+
+    const sorted = [...data.payments].sort((a, b) => b.date.localeCompare(a.date));
+    sorted.forEach(p => {
+      const el = document.createElement('div');
+      el.className = 'history-item';
+      const d = parseDate(p.date);
+      const dateStr = d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+      el.innerHTML = '<span class="history-date">' + dateStr + ' (' + p.weeks + 'w)</span><span class="history-amount">$' + parseFloat(p.amount).toFixed(2) + '</span>';
+      list.appendChild(el);
+    });
+  }
+
+  // Event listeners
+  document.getElementById('prevMonth').addEventListener('click', () => {
+    currentDate.setDate(1);
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar();
+  });
+
+  document.getElementById('nextMonth').addEventListener('click', () => {
+    currentDate.setDate(1);
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderCalendar();
+  });
+
+  document.getElementById('payBtn').addEventListener('click', () => {
+    const amount = parseFloat(document.getElementById('payAmount').value);
+    const weeks = parseInt(document.getElementById('payWeeks').value);
+
+    if (!amount || amount <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+    if (!weeks || weeks < 1) {
+      alert('Please enter number of weeks');
+      return;
+    }
+
+    const today = formatDate(new Date());
+    data.payments.push({ date: today, amount: amount, weeks: weeks });
+    recalculatePaidUpTo();
+    saveData();
+    renderCalendar();
+    renderHistory();
+
+    document.getElementById('payAmount').value = '';
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    if (confirm('Clear all payment data? This cannot be undone.')) {
+      data = { payments: [], paidUpTo: null };
+      saveData();
+      renderCalendar();
+      renderHistory();
+    }
+  });
+
+  // Enter key on inputs
+  document.getElementById('payAmount').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('payBtn').click(); });
+  document.getElementById('payWeeks').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('payBtn').click(); });
+
+  // Initial render
+  recalculatePaidUpTo();
+  renderCalendar();
+  renderHistory();
+})();
+</script>
+</body>
+</html>
