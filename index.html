@@ -2,13 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#2d3436">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rent Tracker">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="Track your rent payments - see at a glance what's paid and what's not">
 <title>Rent Tracker</title>
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json?v=3">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
   :root {
     --green: #2ecc71;
@@ -565,6 +568,11 @@
     font-size: 0.8rem;
     cursor: pointer;
   }
+  .install-banner .secondary {
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    margin-right: 6px;
+  }
   .install-banner .dismiss {
     background: none;
     color: #fff;
@@ -730,10 +738,11 @@
 
 <!-- Install Banner -->
 <div class="install-banner" id="installBanner">
-  <span>Install Rent Tracker on your phone</span>
+  <span id="installText">Install Rent Tracker on your phone</span>
   <div>
-    <button class="dismiss" id="dismissInstall">&#10005;</button>
-    <button id="installBtn">Install</button>
+    <button class="secondary" id="installHelpBtn" type="button">How</button>
+    <button class="dismiss" id="dismissInstall" type="button">&#10005;</button>
+    <button id="installBtn" type="button">Install</button>
   </div>
 </div>
 
@@ -741,6 +750,8 @@
 (function() {
   // === Constants ===
   const STORAGE_KEY = 'rent_tracker_v2';
+  const APP_VERSION = 'v3';
+  const INSTALL_DISMISSED_KEY = 'rent_tracker_install_dismissed_' + APP_VERSION;
   const THEME_KEY = 'rent_tracker_theme';
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
@@ -1379,33 +1390,57 @@
   }
 
   // === PWA Install ===
+  function isStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  }
+
+  function showInstallBanner(mode) {
+    if (isStandalone() || localStorage.getItem(INSTALL_DISMISSED_KEY)) return;
+    const banner = document.getElementById('installBanner');
+    const text = document.getElementById('installText');
+    const installBtn = document.getElementById('installBtn');
+    if (mode === 'prompt') {
+      text.textContent = 'Install Rent Tracker on your phone';
+      installBtn.style.display = 'inline-block';
+    } else {
+      text.textContent = 'iPhone: Share → Add to Home Screen. Android: menu → Install app.';
+      installBtn.style.display = 'none';
+    }
+    banner.classList.add('visible');
+  }
+
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    const banner = document.getElementById('installBanner');
-    const isDismissed = localStorage.getItem('installDismissed');
-    if (!isDismissed) banner.classList.add('visible');
+    showInstallBanner('prompt');
   });
+
+  // iPhone/iPad Safari does not fire beforeinstallprompt; show manual install help.
+  setTimeout(() => {
+    if (!deferredPrompt) showInstallBanner('manual');
+  }, 1500);
 
   document.getElementById('installBtn').addEventListener('click', async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const result = await deferredPrompt.userChoice;
-    if (result.outcome === 'accepted') {
-      showToast('App installed!');
-    }
+    if (result.outcome === 'accepted') showToast('App installed!');
     deferredPrompt = null;
     document.getElementById('installBanner').classList.remove('visible');
   });
 
+  document.getElementById('installHelpBtn').addEventListener('click', () => {
+    alert('To install on iPhone: open this page in Safari, tap Share, then Add to Home Screen.\n\nOn Android/Chrome: tap Install if shown, or use the browser menu and choose Install app / Add to Home screen.');
+  });
+
   document.getElementById('dismissInstall').addEventListener('click', () => {
     document.getElementById('installBanner').classList.remove('visible');
-    localStorage.setItem('installDismissed', 'true');
+    localStorage.setItem(INSTALL_DISMISSED_KEY, 'true');
   });
 
   // === Service Worker ===
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 
   // === Init ===
